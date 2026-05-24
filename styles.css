@@ -1381,7 +1381,8 @@ html, body {
 }
 
 /* ───── BEEHIIV EMBED ─────────────────────────────────────────────────── */
-.email-section iframe.beehiiv-embed {
+.email-section .beehiiv-embed,
+.email-section .beehiiv-embed iframe {
   display: block;
   width: 100%;
   max-width: 420px;

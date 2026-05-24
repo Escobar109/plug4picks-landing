@@ -70,13 +70,7 @@ function buildEmailForm() {
   return `
   <div class="email-section">
     <div class="email-label"><span class="dot pulse-dot"></span>Get Notified When My App Launches!</div>
-    <iframe
-      src="https://subscribe-forms.beehiiv.com/adcc6931-ad84-445c-bff9-58f6c826180f"
-      class="beehiiv-embed"
-      data-test-id="beehiiv-embed"
-      frameborder="0"
-      scrolling="no"
-      style="margin:0; border-radius:0px !important; background-color:transparent;"></iframe>
+    <div class="beehiiv-embed"></div>
   </div>`;
 }
 
