@@ -224,10 +224,14 @@ function renderWeek() {
   // 4 categories now — Props split into Batter Props + Pitcher Props
   [['Sides','sides'],['Totals','totals'],['BatterProps','batter'],['PitcherProps','pitcher']].forEach(([key, cat]) => {
     const data = w[cat];
+    const empty = (data.w + data.l) === 0;
     setEl('stat'+key+'Rec', data.w+'–'+data.l);
     setEl('stat'+key+'Pct', '(' + pctRec(data.w, data.l) + ')');
     const u = document.getElementById('stat'+key+'U');
-    if (u) { u.textContent = fmtU(data.u); u.className = 'stat-u ' + uClass(data.u); }
+    if (u) {
+      u.textContent = empty ? '—' : fmtU(data.u);
+      u.className = 'stat-u ' + (empty ? '' : uClass(data.u));
+    }
   });
   const prevBtn = document.getElementById('prevWeek');
   const nextBtn = document.getElementById('nextWeek');
@@ -265,11 +269,11 @@ async function loadWeeks() {
     WEEKS = rows.map(r => ({
       range: r.range_label,
       weekStart: r.week_start,
-      overall: { w: r.overall_w, l: r.overall_l, u: parseFloat(r.overall_u) },
-      sides:   { w: r.sides_w,   l: r.sides_l,   u: parseFloat(r.sides_u) },
-      totals:  { w: r.totals_w,  l: r.totals_l,  u: parseFloat(r.totals_u) },
-      batter:  { w: r.batter_w,  l: r.batter_l,  u: parseFloat(r.batter_u) },
-      pitcher: { w: r.pitcher_w, l: r.pitcher_l, u: parseFloat(r.pitcher_u) }
+      overall: { w: r.overall_w, l: r.overall_l, u: parseFloat(r.overall_u) || 0 },
+      sides:   { w: r.sides_w,   l: r.sides_l,   u: parseFloat(r.sides_u)   || 0 },
+      totals:  { w: r.totals_w,  l: r.totals_l,  u: parseFloat(r.totals_u)  || 0 },
+      batter:  { w: r.batter_w,  l: r.batter_l,  u: parseFloat(r.batter_u)  || 0 },
+      pitcher: { w: r.pitcher_w, l: r.pitcher_l, u: parseFloat(r.pitcher_u) || 0 }
     }));
   } catch (err) {
     console.error('loadWeeks failed:', err);
@@ -353,10 +357,11 @@ function renderSeason() {
 
   // Category breakdown — 4 categories now
   [['Sides','sides'],['Totals','totals'],['BatterProps','batter'],['PitcherProps','pitcher']].forEach(([key, cat]) => {
+    const empty = (d[cat].w + d[cat].l) === 0;
     set('ss' + key + 'Rec', d[cat].w + '–' + d[cat].l);
-    set('ss' + key + 'U',   (d[cat].u >= 0 ? '+' : '') + d[cat].u.toFixed(2) + 'u');
+    set('ss' + key + 'U',   empty ? '—' : ((d[cat].u >= 0 ? '+' : '') + d[cat].u.toFixed(2) + 'u'));
     const uEl = document.getElementById('ss' + key + 'U');
-    if (uEl) uEl.className = 'ss-u ' + (d[cat].u > 0 ? 'pos' : d[cat].u < 0 ? 'neg' : '');
+    if (uEl) uEl.className = 'ss-u ' + (empty ? '' : (d[cat].u > 0 ? 'pos' : d[cat].u < 0 ? 'neg' : ''));
   });
 
   document.querySelectorAll('.season-tab').forEach(t => {
