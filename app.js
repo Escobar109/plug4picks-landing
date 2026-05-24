@@ -396,11 +396,13 @@ function setBettingStyle(style) {
 // ─── INIT ──────────────────────────────────────────────────────
 function injectBeehiivLoader() {
   if (document.querySelector('script[data-beehiiv-form]')) return;
+  const container = document.querySelector('.beehiiv-embed');
+  if (!container) return;
   const s = document.createElement('script');
   s.async = true;
   s.src = 'https://subscribe-forms.beehiiv.com/v3/loader.js';
   s.setAttribute('data-beehiiv-form', 'adcc6931-ad84-445c-bff9-58f6c826180f');
-  document.body.appendChild(s);
+  container.appendChild(s);
 }
 
 async function initMerged() {
