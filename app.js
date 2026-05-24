@@ -269,6 +269,7 @@ async function loadWeeks() {
     WEEKS = rows.map(r => ({
       range: r.range_label,
       weekStart: r.week_start,
+      weekEnd: r.week_end,
       overall: { w: r.overall_w, l: r.overall_l, u: parseFloat(r.overall_u) || 0 },
       sides:   { w: r.sides_w,   l: r.sides_l,   u: parseFloat(r.sides_u)   || 0 },
       totals:  { w: r.totals_w,  l: r.totals_l,  u: parseFloat(r.totals_u)  || 0 },
@@ -332,16 +333,27 @@ let currentPeriod = 'season';
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+function formatAsOf(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  const monthIdx = parseInt(parts[1]) - 1;
+  const day = parseInt(parts[2]);
+  return MONTH_NAMES[monthIdx] + ' ' + day;
+}
+
 function renderSeason() {
-  let d, label;
+  let d, label, asOfDate;
   if (currentPeriod === 'month') {
     const m = MONTH_AGG();
     d = aggregateWeeks(m.weeks);
     label = MONTH_NAMES[m.month] + ' ' + m.year + (m.fallback ? ' · Last Full Month' : '');
+    asOfDate = m.weeks[0] && m.weeks[0].weekEnd;
   } else {
     d = SEASON_AGG();
     label = (new Date().getFullYear()) + ' Season';
+    asOfDate = WEEKS[0] && WEEKS[0].weekEnd;
   }
+  if (asOfDate) label += ' · As of ' + formatAsOf(asOfDate);
   const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   const total = d.w + d.l;
   const pct = total ? (d.w / total * 100) : 0;
