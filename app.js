@@ -254,10 +254,14 @@ function wireEmail(formId, successId) {
   });
 }
 
-// ─── WEEKLY DATA — live from Supabase (v_landing_weekly_stats) ────────────
+// ─── WEEKLY + MONTHLY DATA — live from Supabase ───────────────────────────
+// WEEKS feeds the weekly card + Season aggregate (sum of all weeks).
+// MONTHS feeds the Month tab — calendar-month grouping on game_date, so
+// April-spanning ISO weeks don't drop May-1-through-Sat-of-that-week picks.
 const SUPABASE_URL = 'https://nyhagyscvqpxmuwhdfzz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_K3OJ_70JGOLfSNsxu_FNmw_RochSF92';
 let WEEKS = [];
+let MONTHS = [];
 
 async function loadWeeks() {
   try {
@@ -281,6 +285,30 @@ async function loadWeeks() {
   }
 }
 
+async function loadMonths() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/v_landing_monthly_stats?select=*&order=month_start.desc', {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    MONTHS = rows.map(r => ({
+      monthStart: r.month_start,
+      rangeLabel: r.range_label,
+      asOfDate: r.as_of_date,
+      // Pre-flattened to match aggregateWeeks output shape so renderSeason
+      // can consume the row directly without an aggregation step.
+      w: r.overall_w, l: r.overall_l, u: parseFloat(r.overall_u) || 0,
+      sides:   { w: r.sides_w,   l: r.sides_l,   u: parseFloat(r.sides_u)   || 0 },
+      totals:  { w: r.totals_w,  l: r.totals_l,  u: parseFloat(r.totals_u)  || 0 },
+      batter:  { w: r.batter_w,  l: r.batter_l,  u: parseFloat(r.batter_u)  || 0 },
+      pitcher: { w: r.pitcher_w, l: r.pitcher_l, u: parseFloat(r.pitcher_u) || 0 }
+    }));
+  } catch (err) {
+    console.error('loadMonths failed:', err);
+  }
+}
+
 // Aggregate a set of weeks into a single record (overall + per-category)
 function aggregateWeeks(weeks) {
   const r = { w:0, l:0, u:0,
@@ -301,32 +329,28 @@ function pctRecCat(rec) { const t = rec.w + rec.l; return t ? Math.round((rec.w/
 // Season = sum of ALL tracked weeks
 const SEASON_AGG = () => aggregateWeeks(WEEKS);
 
-// Month = weeks whose week_start falls in the current calendar month.
-// Falls back to the most recent month with data if the current month is empty.
-// Returns { weeks, year, month (0-indexed), fallback }.
+// Month = the row from v_landing_monthly_stats matching the current calendar
+// month. Falls back to the most recent month with data when the current
+// month has no row yet. Returns { row, fallback } where row already carries
+// the aggregated shape (w/l/u + per-category) consumed by renderSeason.
 function MONTH_AGG() {
-  const inMonth = (w, y, m) => {
-    if (!w.weekStart) return false;
-    const parts = w.weekStart.split('-');
-    return Number(parts[0]) === y && (Number(parts[1]) - 1) === m;
-  };
+  if (MONTHS.length === 0) return { row: null, fallback: false };
   const now = new Date();
-  let year = now.getFullYear();
-  let month = now.getMonth();
-  let weeks = WEEKS.filter(w => inMonth(w, year, month));
+  const targetYear = now.getFullYear();
+  const targetMonth = now.getMonth();
+  const inMonth = (m, y, mi) => {
+    if (!m.monthStart) return false;
+    const parts = m.monthStart.split('-');
+    return Number(parts[0]) === y && (Number(parts[1]) - 1) === mi;
+  };
+  let row = MONTHS.find(m => inMonth(m, targetYear, targetMonth));
   let fallback = false;
-  if (weeks.length === 0) {
-    const dates = WEEKS.map(w => w.weekStart).filter(Boolean).sort();
-    const latest = dates[dates.length - 1];
-    if (latest) {
-      const parts = latest.split('-');
-      year = Number(parts[0]);
-      month = Number(parts[1]) - 1;
-      weeks = WEEKS.filter(w => inMonth(w, year, month));
-      fallback = true;
-    }
+  if (!row) {
+    // MONTHS is ordered month_start.desc, so [0] is the latest month with data.
+    row = MONTHS[0];
+    fallback = true;
   }
-  return { weeks, year, month, fallback };
+  return { row, fallback };
 }
 
 let currentPeriod = 'season';
@@ -345,9 +369,19 @@ function renderSeason() {
   let d, label, asOfDate;
   if (currentPeriod === 'month') {
     const m = MONTH_AGG();
-    d = aggregateWeeks(m.weeks);
-    label = MONTH_NAMES[m.month] + ' ' + m.year + (m.fallback ? ' · Last Full Month' : '');
-    asOfDate = m.weeks[0] && m.weeks[0].weekEnd;
+    if (m.row) {
+      d = m.row;
+      label = m.row.rangeLabel + (m.fallback ? ' · Last Full Month' : '');
+      asOfDate = m.row.asOfDate;
+    } else {
+      // No monthly data yet — render zero state.
+      d = { w:0, l:0, u:0,
+        sides:   { w:0, l:0, u:0 },
+        totals:  { w:0, l:0, u:0 },
+        batter:  { w:0, l:0, u:0 },
+        pitcher: { w:0, l:0, u:0 } };
+      label = 'No data';
+    }
   } else {
     d = SEASON_AGG();
     label = (new Date().getFullYear()) + ' Season';
@@ -419,7 +453,7 @@ function injectBeehiivLoader() {
 
 async function initMerged() {
   injectBeehiivLoader();
-  await loadWeeks();
+  await Promise.all([loadWeeks(), loadMonths()]);
   // season card (if present)
   if (document.getElementById('seasonPct')) renderSeason();
   // calc — if side-by-side markup is present, render both styles; else use toggle
