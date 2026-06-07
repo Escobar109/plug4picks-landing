@@ -158,7 +158,7 @@ html, body {
   animation: hero-line-up 0.75s cubic-bezier(0.2,0.8,0.2,1) forwards;
 }
 .hero-line-1 { animation-delay: 0.30s; }
-.hero-line-2 { animation-delay: 0.85s; }
+.hero-line-2 { animation-delay: 1.37s; }
 
 /* Per-word coloring + electric flash reveal */
 .word { display: inline-block; }
@@ -171,7 +171,7 @@ html, body {
   font-style: italic;
   padding-right: 0.05em;
   margin-right: 0.08em;
-  animation: word-electric-gold 1.4s 0.55s ease-out backwards;
+  animation: word-electric-gold 1.4s 0.30s ease-out backwards;
 }
 .word-cash {
   background: linear-gradient(180deg, #9BF0C0 0%, #6EE898 35%, #4ADE80 100%);
@@ -181,7 +181,7 @@ html, body {
   font-style: italic;
   padding-right: 0.05em;
   margin-right: 0.10em;
-  animation: word-electric-green 1.4s 1.10s ease-out backwards;
+  animation: word-electric-green 1.4s 1.37s ease-out backwards;
 }
 @keyframes word-electric-gold {
   0%   { opacity: 0; transform: scale(0.86); filter: brightness(4) drop-shadow(0 0 48px rgba(255,230,150,0.9)); }
@@ -220,7 +220,7 @@ html, body {
   position: relative; width: 320px; height: 320px;
   margin: 4px auto 24px;
   opacity: 0;
-  animation: logo-power-on 1.6s 1.9s linear forwards;
+  animation: logo-power-on 1.6s 2.44s linear forwards;
 }
 .logo-halo {
   position: absolute; inset: -110px; pointer-events: none; z-index: 0;
