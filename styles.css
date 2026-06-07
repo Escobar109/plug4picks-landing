@@ -220,7 +220,7 @@ html, body {
   position: relative; width: 320px; height: 320px;
   margin: 4px auto 24px;
   opacity: 0;
-  animation: logo-power-on 1.6s 2.44s linear forwards;
+  animation: logo-power-on 1.6s 2.10s linear forwards;
 }
 .logo-halo {
   position: absolute; inset: -110px; pointer-events: none; z-index: 0;
